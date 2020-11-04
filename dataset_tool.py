@@ -24,6 +24,7 @@ import scipy.ndimage
 import scipy.misc
 import datetime
 from tqdm import tqdm
+import base64
 
 from training import dataset
 
@@ -87,7 +88,7 @@ class TFRecordExporter:
                         "shape": tf.train.Feature(
                             int64_list=tf.train.Int64List(value=self.shape)
                         ),
-                        "img":tf.train.Feature(bytes_list=tf.train.BytesList(value=[encoded_jpg]))
+                        "img":tf.train.Feature(float_list=tf.train.FloatList(value=encoded_jpg.reshape(-1)))
                     }
                 )
             )
@@ -729,6 +730,8 @@ def create_from_images(tfrecord_dir, image_dir, shuffle, res_log2=7, resize=None
         )
         print("Adding the images to tfrecords ...")
         for idx in range(order.size):
+            if idx % 1000 == 0:
+                print ("added images", idx)
             img = np.asarray(PIL.Image.open(image_filenames[order[idx]]))
             if resize is not None:
                 size = int(2 ** resize)
@@ -748,7 +751,10 @@ def create_from_images_raw(tfrecord_dir, image_dir, shuffle, res_log2=7, resize=
     print(f"detected {len(image_filenames)} images ...")
     if len(image_filenames) == 0:
         error("No input images found")
-    img = np.asarray(PIL.Image.open(image_filenames[0]))
+    if image_filenames[0].split('.')[-1] == 'npz':
+        img = np.load(image_filenames[0])['arr_0']
+    else:
+        img = np.asarray(PIL.Image.open(image_filenames[0]))
     #resolution = img.shape[0]
     channels = img.shape[2] if img.ndim == 3 else 1
 
@@ -765,12 +771,18 @@ def create_from_images_raw(tfrecord_dir, image_dir, shuffle, res_log2=7, resize=
         for idx in range(order.size):
             if idx % 1000 == 0:
                 print ("added images", idx)
-            with tf.gfile.FastGFile(image_filenames[order[idx]], 'rb') as fid:
-                try:
-                    tfr.add_image_raw(fid.read())
-                except:
-                    print ('error when adding', image_filenames[order[idx]])
-                    continue
+            npz = np.load(image_filenames[order[idx]])['arr_0']
+            try:
+                tfr.add_image_raw(npz)
+            except:
+                print ('error when adding', image_filenames[order[idx]])
+                continue
+            # with tf.gfile.FastGFile(image_filenames[order[idx]], 'rb') as fid:
+            #     try:
+            #         tfr.add_image_raw(fid.read())
+            #     except:
+            #         print ('error when adding', image_filenames[order[idx]])
+            #         continue
 # ----------------------------------------------------------------------------
 
 def create_from_hdf5(tfrecord_dir, hdf5_filename, shuffle):

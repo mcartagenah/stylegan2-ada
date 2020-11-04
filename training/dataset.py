@@ -13,6 +13,7 @@ import glob
 import numpy as np
 import tensorflow as tf
 import dnnlib.tflib as tflib
+import numpy as np
 
 # ----------------------------------------------------------------------------
 # Parse individual image from a tfrecords file.
@@ -34,12 +35,12 @@ def parse_tfrecord_tf_raw(record):
         record,
         features={
             "shape": tf.FixedLenFeature([3], tf.int64),
-            "img": tf.FixedLenFeature([], tf.string),
+            "img": tf.FixedLenFeature([], tf.float32),
         },
     )
-    image = tf.image.decode_image(features['img'])
-    return tf.transpose(image, [2,0,1])
-    #return tf.reshape(data, features["shape"])
+    # image = tf.image.decode_image(features['img'])
+    # return tf.transpose(image, [2,0,1])
+    return tf.reshape(features['img'], features["shape"])
 
 def parse_tfrecord_np(record):
     ex = tf.train.Example()
@@ -58,7 +59,7 @@ def parse_tfrecord_np_raw(record):
     shape = ex.features.feature[
         "shape"
     ].int64_list.value  # temporary pylint workaround # pylint: disable=no-member
-    img = ex.features.feature["img"].bytes_list.value[
+    img = ex.features.feature["img"].float_list.value[
         0
     ]  # temporary pylint workaround # pylint: disable=no-member
     return shape
@@ -91,7 +92,8 @@ class TFRecordDataset:
         #self.resolution         = None
         #self.resolution_log2    = None
         self.shape              = []        # [channels, height, width]
-        self.dtype              = 'uint8'
+        # self.dtype              = 'uint8'
+        self.dtype              = 'float32'
         self.label_file         = label_file
         self.label_size         = None      # components
         self.label_dtype        = None
