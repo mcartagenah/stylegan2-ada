@@ -35,7 +35,7 @@ def parse_tfrecord_tf_raw(record):
         record,
         features={
             "shape": tf.FixedLenFeature([3], tf.int64),
-            "img": tf.FixedLenFeature([], tf.float32),
+            "img": tf.FixedLenFeature([256, 1024, 1], tf.float32),
         },
     )
     # image = tf.image.decode_image(features['img'])
@@ -224,9 +224,9 @@ class TFRecordDataset:
     def get_minibatch_tf(self):
         images, labels = self._tf_iterator.get_next()
         if self.mirror_augment:
-            images = tf.cast(images, tf.float32)
+            #images = tf.cast(images, tf.float32)
             images = tf.where(tf.random_uniform([tf.shape(images)[0]]) < 0.5, images, tf.reverse(images, [3]))
-            images = tf.cast(images, self.dtype)
+            #images = tf.cast(images, self.dtype)
         return images, labels
 
     # Get next minibatch as NumPy arrays.

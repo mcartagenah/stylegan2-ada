@@ -24,7 +24,6 @@ import scipy.ndimage
 import scipy.misc
 import datetime
 from tqdm import tqdm
-import base64
 
 from training import dataset
 
@@ -752,7 +751,8 @@ def create_from_images_raw(tfrecord_dir, image_dir, shuffle, res_log2=7, resize=
     if len(image_filenames) == 0:
         error("No input images found")
     if image_filenames[0].split('.')[-1] == 'npz':
-        img = np.load(image_filenames[0])['arr_0']
+        img = np.load(image_filenames[0])['arr_0'][:, :, :1]
+        print(img.shape)
     else:
         img = np.asarray(PIL.Image.open(image_filenames[0]))
     #resolution = img.shape[0]
@@ -771,7 +771,7 @@ def create_from_images_raw(tfrecord_dir, image_dir, shuffle, res_log2=7, resize=
         for idx in range(order.size):
             if idx % 1000 == 0:
                 print ("added images", idx)
-            npz = np.load(image_filenames[order[idx]])['arr_0']
+            npz = np.load(image_filenames[order[idx]])['arr_0'][:, :, :1]
             try:
                 tfr.add_image_raw(npz)
             except:
